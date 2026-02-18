@@ -1,0 +1,61 @@
+[project]
+name = "training-0"
+version = "0.1.0"
+description = "Training-0: FastAPI + SQLAlchemy 2.0 バックエンド基盤"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    # --- Web フレームワーク ---
+    "fastapi[standard]>=0.115.0",
+    "uvicorn[standard]>=0.34.0",
+
+    # --- データベース ---
+    "sqlalchemy[asyncio]>=2.0.36",
+    "asyncpg>=0.30.0",
+    "alembic>=1.14.0",
+
+    # --- バリデーション / 設定管理 ---
+    "pydantic>=2.10.0",
+    "pydantic-settings>=2.7.0",
+
+    # --- ユーティリティ ---
+    "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+# 開発用ツール（将来的に追加予定）
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.24.0",
+    "httpx>=0.28.0",
+    "mypy>=1.14.0",
+    "ruff>=0.8.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+# --- mypy 設定: 厳密な型チェック ---
+[tool.mypy]
+python_version = "3.13"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+
+# --- ruff 設定: リンター＆フォーマッター ---
+[tool.ruff]
+target-version = "py313"
+line-length = 88
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "SIM", # flake8-simplify
+]

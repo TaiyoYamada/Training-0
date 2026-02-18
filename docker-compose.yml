@@ -1,0 +1,82 @@
+# ===========================================
+# Training-0 Docker Compose（開発環境）
+# backend (FastAPI) + postgres + frontend (SvelteKit)
+# ===========================================
+
+services:
+  # -----------------------------------------
+  # PostgreSQL データベース
+  # -----------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: training0-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-training0}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-training0_password}
+      POSTGRES_DB: ${POSTGRES_DB:-training0_db}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-training0} -d ${POSTGRES_DB:-training0_db}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # -----------------------------------------
+  # FastAPI バックエンド
+  # -----------------------------------------
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: training0-backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_HOST: postgres
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    # マイグレーション実行後にサーバー起動
+    command: >
+      sh -c "
+        echo '🔄 マイグレーション実行中...' &&
+        alembic upgrade head &&
+        echo '✅ マイグレーション完了' &&
+        echo '🚀 サーバー起動中...' &&
+        uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+      "
+    volumes:
+      # 開発時のホットリロード用（ソースコードをマウント）
+      - ./backend/app:/app/app
+
+  # -----------------------------------------
+  # SvelteKit フロントエンド（開発サーバー）
+  # -----------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: dev
+    container_name: training0-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-5173}:5173"
+    environment:
+      PUBLIC_API_BASE_URL: http://localhost:${BACKEND_PORT:-8000}
+    depends_on:
+      - backend
+    volumes:
+      # 開発時のホットリロード用
+      - ./frontend/src:/app/src
+      - ./frontend/static:/app/static
+
+volumes:
+  postgres_data:
+    driver: local

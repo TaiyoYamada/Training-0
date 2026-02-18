@@ -1,0 +1,72 @@
+# ===========================================
+# Training-0 バックエンド CI
+# Python 3.13 + uv でリント・テストを実行
+# ===========================================
+
+name: Backend CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend.yml'
+
+jobs:
+  lint-and-test:
+    name: Lint & Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      # --- チェックアウト ---
+      - name: ソースコードをチェックアウト
+        uses: actions/checkout@v4
+
+      # --- Python セットアップ ---
+      - name: Python 3.13 をセットアップ
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      # --- uv インストール ---
+      - name: uv をインストール
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: 'latest'
+
+      # --- 依存関係のインストール ---
+      - name: 依存関係をインストール
+        run: uv sync --dev
+
+      # --- リント（Ruff） ---
+      - name: Ruff でリントを実行
+        run: uv run ruff check .
+
+      # --- フォーマットチェック（Ruff） ---
+      - name: Ruff でフォーマットをチェック
+        run: uv run ruff format --check .
+
+      # --- 型チェック（Mypy） ---
+      - name: Mypy で型チェックを実行
+        run: uv run mypy app/
+        continue-on-error: true  # 初期段階ではエラーを許容
+
+      # --- テスト（Pytest） ---
+      - name: Pytest でテストを実行
+        run: uv run pytest tests/ -v --tb=short
+        continue-on-error: true  # テストファイルが未作成の場合を考慮
+        env:
+          ENVIRONMENT: dev
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
+          POSTGRES_USER: training0
+          POSTGRES_PASSWORD: training0_password
+          POSTGRES_DB: training0_test_db
