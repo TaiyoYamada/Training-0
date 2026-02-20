@@ -55,6 +55,7 @@ services:
     volumes:
       # 開発時のホットリロード用（ソースコードをマウント）
       - ./backend/app:/app/app
+      - ./backend/alembic:/app/alembic
 
   # -----------------------------------------
   # SvelteKit フロントエンド（開発サーバー）

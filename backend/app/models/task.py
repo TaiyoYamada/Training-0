@@ -62,7 +62,7 @@ class Task(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         default=None,
     )
     status: Mapped[TaskStatus] = mapped_column(
-        Enum(TaskStatus, name="task_status", native_enum=True),
+        Enum(TaskStatus, name="task_status", native_enum=True, values_callable=lambda x: [e.value for e in x]),
         nullable=False,
         default=TaskStatus.TODO,
         server_default=TaskStatus.TODO.value,
